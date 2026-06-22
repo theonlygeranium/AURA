@@ -99,35 +99,44 @@ export function useAgentControlBar(props: UseAgentControlBarProps = {}): UseAgen
     [saveVideoInputDeviceId]
   );
 
+  const cameraEnabled = cameraToggle.enabled;
+  const toggleCamera = cameraToggle.toggle;
+  const microphoneEnabled = microphoneToggle.enabled;
+  const toggleMicrophone = microphoneToggle.toggle;
+  const screenShareEnabled = screenShareToggle.enabled;
+  const toggleScreenShare = screenShareToggle.toggle;
+
   const handleToggleCamera = React.useCallback(
     async (enabled?: boolean) => {
-      if (screenShareToggle.enabled) {
-        screenShareToggle.toggle(false);
+      const nextEnabled = enabled ?? !cameraEnabled;
+      if (screenShareEnabled) {
+        toggleScreenShare(false);
       }
-      await cameraToggle.toggle(enabled);
+      await toggleCamera(enabled);
       // persist video input enabled preference
-      saveVideoInputEnabled(!cameraToggle.enabled);
+      saveVideoInputEnabled(nextEnabled);
     },
-    [cameraToggle.enabled, screenShareToggle.enabled]
+    [cameraEnabled, saveVideoInputEnabled, screenShareEnabled, toggleCamera, toggleScreenShare]
   );
 
   const handleToggleMicrophone = React.useCallback(
     async (enabled?: boolean) => {
-      await microphoneToggle.toggle(enabled);
+      const nextEnabled = enabled ?? !microphoneEnabled;
+      await toggleMicrophone(enabled);
       // persist audio input enabled preference
-      saveAudioInputEnabled(!microphoneToggle.enabled);
+      saveAudioInputEnabled(nextEnabled);
     },
-    [microphoneToggle.enabled]
+    [microphoneEnabled, saveAudioInputEnabled, toggleMicrophone]
   );
 
   const handleToggleScreenShare = React.useCallback(
     async (enabled?: boolean) => {
-      if (cameraToggle.enabled) {
-        cameraToggle.toggle(false);
+      if (cameraEnabled) {
+        toggleCamera(false);
       }
-      await screenShareToggle.toggle(enabled);
+      await toggleScreenShare(enabled);
     },
-    [screenShareToggle.enabled, cameraToggle.enabled]
+    [cameraEnabled, toggleCamera, toggleScreenShare]
   );
 
   return {

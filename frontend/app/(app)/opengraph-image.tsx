@@ -19,7 +19,7 @@ type ImageData = {
 };
 
 // Image metadata
-export const alt = 'About Acme';
+export const alt = 'Project Tango voice companion';
 export const size = {
   width: 1200,
   height: 628,
@@ -165,7 +165,12 @@ export default async function Image() {
             gap: 10,
           }}
         >
-          <img src={wordmarkSrcBase64} width={wordmarkSize.width} height={wordmarkSize.height} />
+          <img
+            alt="Project Tango wordmark"
+            src={wordmarkSrcBase64}
+            width={wordmarkSize.width}
+            height={wordmarkSize.height}
+          />
         </div>
         {/* logo */}
         <div
@@ -178,7 +183,12 @@ export default async function Image() {
             gap: 10,
           }}
         >
-          <img src={logoSrcBase64} width={logoSize.width} height={logoSize.height} />
+          <img
+            alt="Project Tango logo"
+            src={logoSrcBase64}
+            width={logoSize.width}
+            height={logoSize.height}
+          />
         </div>
         {/* title */}
         <div

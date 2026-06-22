@@ -6,8 +6,13 @@ import type { ThemeMode } from '@/lib/types';
 import { THEME_MEDIA_QUERY, THEME_STORAGE_KEY, cn } from '@/lib/utils';
 
 const THEME_SCRIPT = `
-  const doc = document.documentElement;
-  const theme = localStorage.getItem("${THEME_STORAGE_KEY}") ?? "system";
+	  const doc = document.documentElement;
+	  let theme = "system";
+	  try {
+	    theme = localStorage.getItem("${THEME_STORAGE_KEY}") ?? "system";
+	  } catch {
+	    theme = "system";
+	  }
 
   if (theme === "system") {
     if (window.matchMedia("${THEME_MEDIA_QUERY}").matches) {
@@ -27,7 +32,12 @@ function applyTheme(theme: ThemeMode) {
   const doc = document.documentElement;
 
   doc.classList.remove('dark', 'light');
-  localStorage.setItem(THEME_STORAGE_KEY, theme);
+
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // Storage can be unavailable in restricted browser contexts.
+  }
 
   if (theme === 'system') {
     if (window.matchMedia(THEME_MEDIA_QUERY).matches) {
@@ -48,13 +58,19 @@ export function ApplyThemeScript() {
   return <script id="theme-script">{THEME_SCRIPT}</script>;
 }
 
+function readStoredTheme(): ThemeMode {
+  try {
+    return (localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode) ?? 'system';
+  } catch {
+    return 'system';
+  }
+}
+
 export function ThemeToggle({ className }: ThemeToggleProps) {
   const [theme, setTheme] = useState<ThemeMode | undefined>(undefined);
 
   useEffect(() => {
-    const storedTheme = (localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode) ?? 'system';
-
-    setTheme(storedTheme);
+    setTheme(readStoredTheme());
   }, []);
 
   function handleThemeChange(theme: ThemeMode) {

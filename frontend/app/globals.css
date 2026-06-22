@@ -244,4 +244,23 @@
       background-position: 250% 0;
     }
   }
+
+  .animate-orb-error-shake {
+    animation: orb-error-shake 0.42s ease-in-out both;
+  }
+
+  @keyframes orb-error-shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20%,
+    60% {
+      transform: translateX(-4px);
+    }
+    40%,
+    80% {
+      transform: translateX(4px);
+    }
+  }
 }

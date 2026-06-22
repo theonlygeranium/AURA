@@ -4,7 +4,11 @@ import * as React from 'react';
 import { useCallback } from 'react';
 import { Track } from 'livekit-client';
 import { BarVisualizer, useRemoteParticipants } from '@livekit/components-react';
-import { ChatTextIcon, PhoneDisconnectIcon } from '@phosphor-icons/react/dist/ssr';
+import {
+  ChatTextIcon,
+  ClosedCaptioningIcon,
+  PhoneDisconnectIcon,
+} from '@phosphor-icons/react/dist/ssr';
 import { ChatInput } from '@/components/livekit/chat/chat-input';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
@@ -19,6 +23,8 @@ export interface AgentControlBarProps
     UseAgentControlBarProps {
   capabilities: Pick<AppConfig, 'supportsChatInput' | 'supportsVideoInput' | 'supportsScreenShare'>;
   onChatOpenChange?: (open: boolean) => void;
+  captionsEnabled?: boolean;
+  onCaptionsEnabledChange?: (enabled: boolean) => void;
   onSendMessage?: (message: string) => Promise<void>;
   onDisconnect?: () => void;
   onDeviceError?: (error: { source: Track.Source; error: Error }) => void;
@@ -34,6 +40,8 @@ export function AgentControlBar({
   className,
   onSendMessage,
   onChatOpenChange,
+  captionsEnabled,
+  onCaptionsEnabledChange,
   onDisconnect,
   onDeviceError,
   ...props
@@ -128,7 +136,7 @@ export function AgentControlBar({
                 pressed={microphoneToggle.enabled}
                 disabled={microphoneToggle.pending}
                 onPressedChange={microphoneToggle.toggle}
-                className="peer/track group/track relative w-auto pr-3 pl-3 md:rounded-r-none md:border-r-0 md:pr-2"
+                className="peer/track group/track relative min-h-11 min-w-11 pr-3 pl-3 md:rounded-r-none md:border-r-0 md:pr-2"
               >
                 <BarVisualizer
                   barCount={3}
@@ -210,9 +218,20 @@ export function AgentControlBar({
               pressed={chatOpen}
               onPressedChange={setChatOpen}
               disabled={!isAgentAvailable}
-              className="aspect-square h-full"
+              className="min-h-11 min-w-11"
             >
               <ChatTextIcon weight="bold" />
+            </Toggle>
+          )}
+          {onCaptionsEnabledChange && (
+            <Toggle
+              variant="secondary"
+              aria-label="Toggle captions"
+              pressed={captionsEnabled}
+              onPressedChange={onCaptionsEnabledChange}
+              className="min-h-11 min-w-11"
+            >
+              <ClosedCaptioningIcon weight={captionsEnabled ? 'fill' : 'bold'} />
             </Toggle>
           )}
         </div>
@@ -221,7 +240,7 @@ export function AgentControlBar({
             variant="destructive"
             onClick={onLeave}
             disabled={isDisconnecting}
-            className="font-mono"
+            className="min-h-11 font-mono"
           >
             <PhoneDisconnectIcon weight="bold" />
             <span className="hidden md:inline">END CALL</span>

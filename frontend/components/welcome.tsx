@@ -1,13 +1,11 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useRef } from 'react';
+import { FaReact } from 'react-icons/fa';
+import { PersonaSelector } from '@/components/PersonaSelector';
 import { TippingButton } from '@/components/TippingButton';
-import { FaReact } from 'react-icons/fa'; // Example using react-icons
-
-// ====================================================================
-// START: Animated Squares Background React Component
-// ====================================================================
+import { Button } from '@/components/ui/button';
+import { type PersonaId } from '@/lib/personas';
 
 interface AnimatedSquaresProps {
   direction?: 'diagonal' | 'up' | 'right' | 'down' | 'left';
@@ -38,6 +36,26 @@ const AnimatedSquares: React.FC<AnimatedSquaresProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const getCanvasPalette = () => {
+      const isDark = document.documentElement.classList.contains('dark');
+
+      if (isDark) {
+        return {
+          border: borderColor,
+          hover: hoverFillColor,
+          center: 'rgba(18, 18, 18, 0)',
+          edge: 'rgba(18, 18, 18, 1)',
+        };
+      }
+
+      return {
+        border: 'rgba(0, 44, 242, 0.16)',
+        hover: 'rgba(0, 44, 242, 0.06)',
+        center: 'rgba(249, 249, 246, 0)',
+        edge: 'rgba(249, 249, 246, 1)',
+      };
+    };
+
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -45,6 +63,7 @@ const AnimatedSquares: React.FC<AnimatedSquaresProps> = ({
 
     const drawGrid = () => {
       const state = animationState.current;
+      const palette = getCanvasPalette();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       for (let x = 0; x < canvas.width + squareSize; x += squareSize) {
@@ -58,21 +77,25 @@ const AnimatedSquares: React.FC<AnimatedSquaresProps> = ({
             Math.floor(y / squareSize) === state.hoveredSquare.y;
 
           if (isHovered) {
-            ctx.fillStyle = hoverFillColor;
+            ctx.fillStyle = palette.hover;
             ctx.fillRect(squareX, squareY, squareSize, squareSize);
           }
 
-          ctx.strokeStyle = borderColor;
+          ctx.strokeStyle = palette.border;
           ctx.strokeRect(squareX, squareY, squareSize, squareSize);
         }
       }
 
       const gradient = ctx.createRadialGradient(
-        canvas.width / 2, canvas.height / 2, 0,
-        canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 1.5
+        canvas.width / 2,
+        canvas.height / 2,
+        0,
+        canvas.width / 2,
+        canvas.height / 2,
+        Math.max(canvas.width, canvas.height) / 1.5
       );
-      gradient.addColorStop(0, 'rgba(18, 18, 18, 0)');
-      gradient.addColorStop(1, 'rgba(18, 18, 18, 1)');
+      gradient.addColorStop(0, palette.center);
+      gradient.addColorStop(1, palette.edge);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     };
@@ -102,10 +125,6 @@ const AnimatedSquares: React.FC<AnimatedSquaresProps> = ({
       animationState.current.hoveredSquare = null;
     };
 
-    const handleTipComplete = () => {
-      console.log('Tip animation finished! Thanks for the tip!');
-    };
-
     resizeCanvas();
     updateAnimation();
     window.addEventListener('resize', resizeCanvas);
@@ -113,9 +132,10 @@ const AnimatedSquares: React.FC<AnimatedSquaresProps> = ({
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseleave', handleMouseLeave);
 
+    const state = animationState.current;
     return () => {
-      if (animationState.current.requestRef) {
-        cancelAnimationFrame(animationState.current.requestRef);
+      if (state.requestRef) {
+        cancelAnimationFrame(state.requestRef);
       }
       window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('mousemove', handleMouseMove);
@@ -123,22 +143,19 @@ const AnimatedSquares: React.FC<AnimatedSquaresProps> = ({
     };
   }, [direction, speed, borderColor, squareSize, hoverFillColor]);
 
-  return <canvas ref={canvasRef} className="w-full h-full absolute inset-0 -z-10" />;
+  return <canvas ref={canvasRef} className="absolute inset-0 -z-10 h-full w-full" />;
 };
-
-// ====================================================================
-// END: Animated Squares Background React Component
-// ====================================================================
-
 
 interface WelcomeProps {
   disabled: boolean;
   startButtonText: string;
+  selectedPersonaId: PersonaId;
+  onPersonaChange: (personaId: PersonaId) => void;
   onStartCall: () => void;
 }
 
 export const Welcome = React.forwardRef<HTMLDivElement, WelcomeProps>(
-  ({ disabled, startButtonText, onStartCall }, ref) => {
+  ({ disabled, startButtonText, selectedPersonaId, onPersonaChange, onStartCall }, ref) => {
     function handleTipComplete(): void {
       // Show a thank you message or perform any desired action after tipping
       console.log('Tip animation finished! Thanks for the tip!');
@@ -147,8 +164,7 @@ export const Welcome = React.forwardRef<HTMLDivElement, WelcomeProps>(
     return (
       <div
         ref={ref}
-        // @ts-ignore
-        inert={disabled ? '' : undefined}
+        inert={disabled}
         className="fixed inset-0 z-10 mx-auto flex h-svh flex-col items-center justify-center text-center"
       >
         <AnimatedSquares
@@ -159,42 +175,48 @@ export const Welcome = React.forwardRef<HTMLDivElement, WelcomeProps>(
           hoverFillColor="#222"
         />
 
-        {/* 
-          THE FIX: We make this entire content block 'invisible' to the mouse,
-          but we will re-enable pointer events on the button itself so it remains clickable.
-        */}
-        <div className="relative z-10 flex flex-col items-center p-4 pointer-events-none">
-          <h1 className="font-mono text-[12rem] sm:text-[8rem] md:text-[15rem] tracking-tight text-foreground leading-none">
-            AURA
+        <div className="pointer-events-none relative z-10 flex max-w-[min(94vw,48rem)] flex-col items-center gap-4 p-4">
+          <h1 className="text-foreground font-mono text-5xl leading-none sm:text-7xl md:text-[8rem] lg:text-[10rem]">
+            TANGO
           </h1>
 
-          <p className=" max-w-lg text-lg leading-8 text-foreground/80">
-            Meet Aura – Your AI Companion for Thoughtful Conversations. When you're ready, begin your session.
+          <p className="text-foreground/80 max-w-lg text-base leading-7 sm:text-lg">
+            Choose a voice, then begin a thoughtful Project Tango session.
           </p>
+
+          <div className="pointer-events-auto flex w-full flex-col items-center gap-2">
+            <span className="text-foreground/60 font-mono text-xs font-bold uppercase">
+              Persona
+            </span>
+            <PersonaSelector
+              selectedPersonaId={selectedPersonaId}
+              onPersonaChange={onPersonaChange}
+              disabled={disabled}
+            />
+          </div>
+
           <Button
             variant="primary"
             size="lg"
             onClick={onStartCall}
-            // Add text-lg here to increase the font size
-            className="mt-4 w-64 font-sans pointer-events-auto text-[0.85rem] text-white/50 hover:text-white transition-colors"
+            className="text-primary-foreground/80 hover:text-primary-foreground pointer-events-auto min-h-11 w-64 font-sans text-[0.85rem] transition-colors"
             disabled={disabled}
           >
             {startButtonText}
           </Button>
         </div>
 
-        <p className="fixed bottom-6 left-1/2 w-full max-w-prose -translate-x-1/2 text-xs text-foreground/60 pointer-events-none">
-          Built by Dheeraj Appaji using{' '}
+        <p className="text-foreground/60 pointer-events-none fixed bottom-6 left-1/2 w-full max-w-prose -translate-x-1/2 text-xs">
+          Project Tango uses{' '}
           <a
             target="_blank"
             rel="noopener noreferrer"
             href="https://livekit.io"
-            // THE FIX PART 3: Also re-enable mouse events for the link
-            className="underline hover:text-foreground/80 pointer-events-auto"
+            className="hover:text-foreground/80 pointer-events-auto underline"
           >
             LiveKit
           </a>
-          . Finally, someone who listens... unlike your group chat.
+          .
         </p>
         <TippingButton
           onTip={handleTipComplete}

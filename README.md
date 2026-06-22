@@ -1,203 +1,88 @@
-# Aura — Your Personal AI Command Center
+# Project Tango
 
-Aura is a multimodal, voice-first AI assistant designed to be your personal command center. It provides an intelligent, responsive interface to control your computer, access real-time information, and even understand the world through visual input.
+Project Tango adapts the forked AURA LiveKit voice interface into a Schubert-hosted,
+persona-driven AI companion. The frontend keeps the orb-style WebRTC session UI, while
+the backend routes all LLM traffic through the existing LiteLLM proxy on Schubert.
 
-The platform integrates low-latency voice communication, advanced AI function calling, and a sleek, futuristic frontend to create an immersive and powerful user experience.
+## Architecture
 
-<p align="center">
-  <img src="assets/logo.png" width="150" alt="Aura Logo" />
-</p>
+- `frontend/` - Next.js 15 LiveKit client on port `3006`.
+- `backend/` - FastAPI token/session API plus persona-aware LiveKit voice worker on port `8030`.
+- `deploy/` - systemd units plus the API-only Caddy append block.
+- `docs/` - Codex agent constraints and bootstrap plan.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/AI-Assistant-blueviolet?style=for-the-badge&logo=OpenAI&logoColor=white" alt="AI Assistant Badge"/>
-  <img src="https://img.shields.io/badge/Multimodal-Vision-blue?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiA0LjVDNyAyLjUgMiA3IDIgMTJzNSA5LjUgMTAgOS41czEwLTQuNSAxMC05LjVTMTcgMi41IDEyIDQuNVpNMTIgMTdjLTIuNzYgMC01LTIuMjQtNS01czIuMjQtNSA1LTUgNSAyLjI0IDUgNS0yLjI0IDUtNSA1Wm0wLTdjLTEuMSAwLTItLjg5LTMtMnMtLjg5LTItMi0yIDAtMi4yNCAwLTIuMjRaIi8+PC9zdmc+&logoColor=white" alt="Multimodal Vision Badge"/>
-  <img src="https://img.shields.io/badge/LiveKit-Agent-green?style=for-the-badge&logo=livekit&logoColor=white" alt="LiveKit Agent Badge"/>
-  <img src="https://img.shields.io/badge/Frontend-Next.js-black?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js Badge"/>
-  <img src="https://img.shields.io/badge/Backend-Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python Badge"/>
-</p>
+Project Tango assumes these Schubert services already exist:
 
----
+- `polyglot-litellm.service` at `http://localhost:4000`
+- `ollama.service` with `qwen3.6:latest`
+- `postgresql@18-main.service`
+- `caddy.service`
+- `cloudflared.service`
 
-## 🎯 Key Features
+Do not deploy new LiteLLM or Ollama services for this repo. LLM calls go through
+`http://localhost:4000` only, authenticated with `LITELLM_MASTER_KEY`.
 
--   **Multimodal AI Core:** Powered by GPT-4o, Aura understands commands from both voice and (soon ) visual input from your camera.
--   **Comprehensive System Control:** Launch applications, manage system volume and brightness, and execute power controls (shutdown, restart, sleep).
--   **Real-Time Information Hub:** Instantly fetch live weather, news headlines, stock prices, and search results from the web.
--   **Seamless Communication:** Send emails via Gmail and messages via WhatsApp using natural voice commands and a stored contact list.
--   **Advanced AI Stack:** Utilizes best-in-class services for Speech-to-Text (Deepgram), Language Model (OpenAI), and Text-to-Speech (ElevenLabs).
--   **Futuristic UI:** A responsive and dynamic user interface built with Next.js, featuring a reactive agent "orb" and an animated background.
--   **Voice-First Interaction:** Built on the LiveKit Agents framework for robust, low-latency, real-time audio conversations.
+## Schubert Notes
 
----
+- `project-tango.schubert.life` already proxies to frontend port `3006`; do not create a
+  second frontend Caddy block.
+- `deploy/Caddyfile.tango-api` is the only new Caddy append block and routes
+  `tango-api.schubert.life` to backend port `8030`.
+- Live inspection on 2026-06-22 showed `127.0.0.1:8010` is permanently owned by
+  Docker container `asr-gateway`; Tango uses `8030`, which must remain free for
+  the backend. Run `deploy/schubert-preflight.sh` before installing.
+- Do not add `WRITER_API_KEY` or `PALMYRA_API_KEY` to Tango env files. LiteLLM already
+  owns downstream provider credentials.
 
-## 🧑‍💻 Tech Stack
+## Personas
 
-| Component          | Technology/Service                                                                                             |
-| ------------------ | -------------------------------------------------------------------------------------------------------------- |
-| **Framework**      | Next.js (React)                                                                                                |
-| **AI Agent SDK**   | LiveKit Agents                                                                                                 |
-| **Language Model** | OpenAI (GPT-4o)                                                                                                |
-| **Speech-to-Text** | Deepgram (Nova-2)                                                                                              |
-| **Text-to-Speech** | ElevenLabs                                                                                                     |
-| **Styling**        | Tailwind CSS, shadcn/ui, Framer Motion                                                                         |
-| **Real-Time Comms**| LiveKit                                                                                                        |
-| **Backend**        | Python                                                                                                         |
+| Persona | Display Name | Voice ID | LiteLLM Alias |
+| --- | --- | --- | --- |
+| Therapy | Damian | `QF9HJC7XWnue5c9W3LkY` | `local/qwen3-fast` |
+| General Info | Chris (British) | `HfRP3cIhYLmeNHeTvkWK` | `writer/palmyra-x5-voice` |
+| Meditation | Nathaniel | `pFQStpMdprGFILRDrWR2` | `local/qwen3-fast` |
+| Pinoy Pride | Tita | `smYFzUb4yrSqprnml7n5` | `local/qwen3-fast` |
 
----
+The frontend sends the selected persona to `/api/connection-details`. The backend encodes
+that selection into LiveKit token metadata and room naming so the worker can load the
+correct system prompt, ElevenLabs voice, and LiteLLM model.
 
-## 📸 Screenshots
-<table> 
-  <tr> 
-    <td align="center"><strong>Welcome Screen</strong></td> 
-    <td align="center"><strong>Session View</strong></td> 
-  </tr> 
-  <tr> 
-    <td width="50%"><img src="assets/Landing_Page.png" alt="Aura Welcome Screen" /></td> 
-    <td width="50%"><img src="assets/Working_Model.png" alt="Aura Session Interface" /></td> 
-  </tr> 
-</table>
+## Local Setup
 
----
+Backend:
 
-## 🚀 Getting Started
-
-The project is divided into two main parts: `backend` and `frontend`.
-
-### Backend Setup (The AI Agent )
-
-1.  **Navigate to the backend directory:**
-    ```bash
-    cd backend
-    ```
-
-2.  **Create and activate a virtual environment:**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    ```
-
-3.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  **Configure Environment Variables:**
-    Create a `.env` file in the `backend/` directory and add your API keys:
-    ```env
-    # .env (in backend/)
-    LIVEKIT_URL=wss://your-project.livekit.cloud
-    LIVEKIT_API_KEY=your_api_key
-    LIVEKIT_API_SECRET=your_api_secret
-
-    OPENAI_API_KEY=your_openai_key
-    ELEVENLABS_API_KEY=your_elevenlabs_key
-    ELEVENLABS_VOICE_ID=your_elevenlabs_voice_id
-    DEEPGRAM_API_KEY=your_deepgram_key
-    
-    # Optional for information tools
-    WEATHER_API_KEY=your_openweathermap_key
-    NEWS_API_KEY=your_newsapi_key
-    ```
-5.  **Google API Setup:**
-    - Download your `credentials.json` file from the Google Cloud Console and place it in the `backend/` directory.
-    - The first time you run a Gmail command, you will be prompted to authenticate in your browser. This will create a `token.json` file.
-
-6.  **Run the Agent Worker:**
-    ```bash
-    python main.py dev
-    ```
-
-### Frontend Setup (The Web App)
-
-1.  **Navigate to the frontend directory:**
-    ```bash
-    cd frontend
-    ```
-
-2.  **Install dependencies (using npm):**
-    ```bash
-    npm install
-    ```
-
-3.  **Configure Environment Variables:**
-    Copy `.env.example` to `.env.local` and add your LiveKit credentials. These are used to generate a token for the user to join the room.
-    ```env
-    # .env.local (in frontend/)
-    LIVEKIT_API_KEY=your_livekit_api_key
-    LIVEKIT_API_SECRET=your_livekit_api_secret
-    LIVEKIT_URL=wss://your-project.livekit.cloud
-    ```
-
-4.  **Start the development server:**
-    ```bash
-    npm run dev
-    ```
-    Open [http://localhost:3000](http://localhost:3000 ) in your browser to begin a session.
-
----
-
-## 📁 Project Structure
-
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn main:app --host 127.0.0.1 --port 8030 --reload
 ```
-AURA/
-├── backend/
-│   ├── tools/              # All Python tool definitions (system, web, etc.)
-│   ├── jarvis_agent.py     # The core agent class, instructions, and tool registration
-│   ├── main.py             # Entrypoint to run the LiveKit agent worker
-│   ├── contacts.json       # User's contact list for WhatsApp/Email
-│   ├── requirements.txt    # Python dependencies
-│   └── .env                # Backend API keys (gitignored)
-│
-└── frontend/
-├── app/                # Next.js App Router (pages, layouts, API routes)
-├── components/         # React components (UI, LiveKit controls)
-├── hooks/              # Custom React hooks for LiveKit
-├── lib/                # Utility functions and type definitions
-├── public/             # Static assets (images, fonts)
-├── app-config.ts       # App branding and feature configuration
-├── package.json        # Frontend dependencies and scripts
-└── .env.local          # Frontend environment variables (gitignored)
+
+Frontend:
+
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev -- --port 3006
 ```
----
 
-## 🗺️ Roadmap & Future Improvements
+Open `http://localhost:3006`.
 
-Aura is an actively developing project with an ambitious roadmap. The goal is to expand its capabilities to become an even more integrated and intelligent assistant. Here are some of the key features planned for future releases:
+## Validation
 
--   **[ ] 👁️ Live Camera Vision & Object Detection**
-    -   Enable Aura to access the live camera feed to identify objects, read text from the physical world, and describe the user's surroundings in real-time.
+1. `cd backend && uvicorn main:app --host 127.0.0.1 --port 8030 --reload`
+2. `cd frontend && npm run dev -- --port 3006`
+3. Confirm the persona selector shows all four personas.
+4. Select Damian and connect.
+5. Confirm Deepgram Nova-3 interim captions are visible.
+6. Confirm ElevenLabs Flash v2.5 playback and speaking animation.
+7. Confirm backend logs show `http://localhost:4000`, not `api.openai.com`.
+8. Confirm Therapy uses `local/qwen3-fast`.
+9. Switch to Chris and confirm model routing changes to `writer/palmyra-x5-voice`.
+10. Confirm deploy artifacts exist in `deploy/`.
+11. Run `bash -n deploy/schubert-preflight.sh`.
 
--   **[ ] 🖥️ Enhanced Screen Interaction**
-    -   Go beyond just describing the screen by allowing Aura to take actions based on visual context, such as clicking buttons or filling out forms.
-
--   **[ ] ✅ Interactive To-Do List Management**
-    -   Allow users to create, manage, and check off tasks on a to-do list using voice commands. Aura will provide reminders and summaries of pending items.
-
--   **[ ] 📄 Chat with PDF Documents**
-    -   Implement functionality for users to upload a PDF document and have a conversation with Aura about its contents, asking it to summarize sections, find information, or answer specific questions.
-
--   **[ ] 📺 YouTube Video Summarization**
-    -   Give Aura the ability to accept a YouTube URL and provide a concise summary of the video's content, saving the user time.
-
--   **[ ] 💡 Advanced Content Generation**
-    -   Expand on the core AI to allow for more complex creative tasks, such as converting a spoken idea into a structured blog post or generating code snippets on command.
-
-Contributions to help build these features are highly welcome! Please see the [open issues](https://github.com/your-username/AURA/issues ) to get involved.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! If you have ideas for improvements or want to fix a bug, please feel free to open an issue or submit a pull request.
-
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
-
----
-
-## 👨‍💻 Author
-
-Made with 💙 by Dheeraj Appaji.
+Read `docs/AGENTS.md` before making further changes.

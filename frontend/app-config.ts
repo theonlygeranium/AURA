@@ -1,23 +1,19 @@
 // FILE: app-config.ts
-
 import type { AppConfig } from './lib/types';
 
 export const APP_CONFIG_DEFAULTS: AppConfig = {
-  // --- Branding Changes ---
-  companyName: 'AURA',
-  pageTitle: 'AURA | AI Coworker',
-  pageDescription: 'An AI assisstant that fuels your productivity.',
+  companyName: 'Project Tango',
+  pageTitle: 'Project Tango | AI Companion',
+  pageDescription: 'A voice-first AI companion routed through Schubert.',
   startButtonText: 'Start conversation',
 
-  // --- Feature Flags (can be left as is) ---
   supportsChatInput: true,
   supportsVideoInput: true,
   supportsScreenShare: true,
   isPreConnectBufferEnabled: true,
 
-  // --- Visuals (we will override these, but good to have fallbacks) ---
-  logo: '/logo.svg', // You can create a simple logo later
-  accent: '#4A90E2', // A calming blue
+  logo: '/logo.svg',
+  accent: '#4A90E2',
   logoDark: '/logo-dark.svg',
-  accentDark: '#81A1C1', // A softer, Nordic blue for dark mode
+  accentDark: '#81A1C1',
 };

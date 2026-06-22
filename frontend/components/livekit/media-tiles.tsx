@@ -30,7 +30,7 @@ const animationProps = {
     scale: 0,
   },
   transition: {
-    type: "spring" as const,
+    type: 'spring' as const,
     stiffness: 675,
     damping: 75,
     mass: 1,
@@ -88,9 +88,15 @@ export function useLocalTrackRef(source: Track.Source) {
 
 interface MediaTilesProps {
   chatOpen: boolean;
+  connectionFailed?: boolean;
+  sessionStarted: boolean;
 }
 
-export function MediaTiles({ chatOpen }: MediaTilesProps) {
+export function MediaTiles({
+  chatOpen,
+  connectionFailed = false,
+  sessionStarted,
+}: MediaTilesProps) {
   const {
     state: agentState,
     audioTrack: agentAudioTrack,
@@ -120,6 +126,9 @@ export function MediaTiles({ chatOpen }: MediaTilesProps) {
   const avatarLayoutTransition = transition;
 
   const isAvatar = agentVideoTrack !== undefined;
+  const isConnecting =
+    sessionStarted && (agentState === 'connecting' || agentState === 'initializing');
+  const isError = connectionFailed || (sessionStarted && agentState === 'disconnected');
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-8 bottom-32 z-50 md:top-12 md:bottom-40">
@@ -146,6 +155,8 @@ export function MediaTiles({ chatOpen }: MediaTilesProps) {
                   transition={agentLayoutTransition}
                   state={agentState}
                   audioTrack={agentAudioTrack}
+                  isConnecting={isConnecting}
+                  isError={isError}
                   className={cn(chatOpen ? 'h-[90px]' : 'h-auto w-full')}
                 />
               )}

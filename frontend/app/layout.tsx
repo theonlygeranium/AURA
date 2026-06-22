@@ -1,9 +1,14 @@
+import type { Metadata } from 'next';
 import { Public_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
 import { headers } from 'next/headers';
 import { ApplyThemeScript, ThemeToggle } from '@/components/theme-toggle';
 import { getAppConfig } from '@/lib/utils';
 import './globals.css';
+
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3006'),
+};
 
 const publicSans = Public_Sans({
   variable: '--font-public-sans',
@@ -63,8 +68,8 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         className={`${publicSans.variable} ${commitMono.variable} overflow-x-hidden antialiased`}
       >
         {children}
-        <div className="group fixed bottom-0 left-1/2 z-50 mb-2 -translate-x-1/2">
-          <ThemeToggle className="translate-y-20 transition-transform delay-150 duration-300 group-hover:translate-y-0" />
+        <div className="fixed top-3 right-3 z-[80]">
+          <ThemeToggle className="shadow-sm backdrop-blur-md" />
         </div>
       </body>
     </html>

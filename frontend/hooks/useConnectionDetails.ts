@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ConnectionDetails } from '@/app/api/connection-details/route';
+import type { ConnectionDetails } from '@/app/api/connection-details/route';
+import { DEFAULT_PERSONA_ID, type PersonaId } from '@/lib/personas';
 
-export default function useConnectionDetails() {
+export default function useConnectionDetails(personaId: PersonaId = DEFAULT_PERSONA_ID) {
   // Generate room connection details, including:
   //   - A random Room name
   //   - A random Participant name
@@ -15,10 +16,12 @@ export default function useConnectionDetails() {
 
   const fetchConnectionDetails = useCallback(() => {
     setConnectionDetails(null);
-    const url = new URL(
-      process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? '/api/connection-details',
-      window.location.origin
-    );
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const endpoint =
+      process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ??
+      (apiBaseUrl ? `${apiBaseUrl.replace(/\/$/, '')}/api/connection-details` : '/api/connection-details');
+    const url = new URL(endpoint, window.location.origin);
+    url.searchParams.set('persona_id', personaId);
     fetch(url.toString())
       .then((res) => res.json())
       .then((data) => {
@@ -27,7 +30,7 @@ export default function useConnectionDetails() {
       .catch((error) => {
         console.error('Error fetching connection details:', error);
       });
-  }, []);
+  }, [personaId]);
 
   useEffect(() => {
     fetchConnectionDetails();

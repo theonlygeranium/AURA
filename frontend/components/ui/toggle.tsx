@@ -13,7 +13,6 @@ const toggleVariants = cva(
     'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:border-ring',
     'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
     'disabled:pointer-events-none disabled:opacity-50 disabled:not-allowed',
-    'data-[state=on]:bg-button-selected data-[state=on]:border-button-border-selected',
     "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
   ],
   {
