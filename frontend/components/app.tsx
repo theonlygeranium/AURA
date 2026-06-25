@@ -44,7 +44,10 @@ export function App({ appConfig }: AppProps) {
   const [canPlayAudio, setCanPlayAudio] = useState(room.canPlaybackAudio);
   const [selectedPersonaId, setSelectedPersonaId] = useState<PersonaId>(DEFAULT_PERSONA_ID);
   const [personaStorageReady, setPersonaStorageReady] = useState(false);
-  const { connectionDetails, refreshConnectionDetails } = useConnectionDetails(selectedPersonaId);
+  const { connectionDetails, refreshConnectionDetails } = useConnectionDetails(
+    selectedPersonaId,
+    personaStorageReady
+  );
 
   useEffect(() => {
     setSelectedPersonaId(readStoredPersonaId());
@@ -112,6 +115,31 @@ export function App({ appConfig }: AppProps) {
         }
 
         if (aborted) {
+          return;
+        }
+
+        try {
+          const apiBase = 'https://tango-api.schubert.life';
+          const dispatchResponse = await fetch(apiBase + '/api/dispatch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ room_name: connectionDetails.roomName }),
+          });
+          if (!dispatchResponse.ok) {
+            throw new Error(`Dispatch failed with HTTP ${dispatchResponse.status}`);
+          }
+        } catch (error) {
+          if (aborted) {
+            return;
+          }
+
+          const dispatchError = error instanceof Error ? error : new Error(String(error));
+          toastAlert({
+            title: 'Agent dispatch failed. Retrying...',
+            description: dispatchError.message,
+          });
+          refreshConnectionDetails();
+          setSessionStarted(false);
           return;
         }
 
