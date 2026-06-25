@@ -11,6 +11,11 @@ ehthumbs.db
 # Python / Backend
 # =================================
 
+# Runtime secrets belong on Schubert or in local env files, never in Git.
+/.env
+/.env.*
+!/.env.example
+
 # Virtual Environment
 backend/venv/
 
